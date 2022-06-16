@@ -1,3 +1,4 @@
+
 async function handleData(property) {
 
   d3.select("svg")
@@ -23,6 +24,10 @@ async function handleData(property) {
     .domain(dataExtent)
     .range([height, margin.bottom])
 
+  const colorscale = d3.scaleLinear()
+    .domain(d3.extent(data, d => d.average))
+    .range([90, 10])
+
   // Select the SVG (root node)
   const svg = d3.select('#svg')
 
@@ -34,6 +39,7 @@ async function handleData(property) {
     .enter()
     .append('rect')
     .attr('class', 'bar')
+    .attr('fill', d => `hsl(140, 100%, ${colorscale(d.average)}%)`)
     .attr('x', (d, i) => xscale(d.property))
     .attr('y', d => yscale(d.average))
     .attr('width', xscale.bandwidth())
@@ -52,6 +58,7 @@ async function handleData(property) {
   .append('g')
   .attr('transform', `translate(${margin.left}, 0)`)
   .call(leftAxis)
+
 }
 
 const getTotalClimbers = (data) => data.length
@@ -59,9 +66,47 @@ const getTotalClimbers = (data) => data.length
 // grade level per years of climbing
 // grade level per height -> men/women
 
+const gradeByAgeGroups = (climbers) => {
+
+  // const passengers = data.filter((passenger) => property in passenger.fields)
+	// const array = passengers.reduce((prev, passenger) => {
+	// 	if (prev[Math.floor(passenger.fields[property] / step)] === undefined) {
+	// 		prev[Math.floor(passenger.fields[property] / step)] = 1
+	// 		// console.log(prev[Math.floor(passenger.fields[property] / step)])
+	// 	} else {
+	// 		prev[Math.floor(passenger.fields[property] / step)] += 1
+	// 	}
+	// 	return prev
+	// }, [])
+	// for (let i = 0; i < array.length; i ++ ) {
+	// 	if (array[i] === undefined) {
+	// 		array[i] = 0
+	// 	}
+	// }
+	// return array
+
+  console.log(climbers)
+  let hist = {} 
+  hist = climbers.reduce((prev, climber) => {
+		if (Math.floor(climber.age) in prev ) {
+      prev[Math.floor(climber.age)].push(climber.grades_max)
+			// console.log(prev[Math.floor(passenger.fields[property] / step)])
+		} else {
+			prev[Math.floor(climber.age)] = [climber.grades_max]
+		}
+		return prev
+	}, hist)
+
+  console.log(hist)
+	return hist
+}
 
 const gradeByProperty = (data, property) => {
-	const climbers = data.filter((climber) => property in climber)
+	const climbers = data.filter((climber) => property in climber);
+
+  if (property === 'age') {
+    return gradeByAgeGroups(climbers);
+  }
 	
 	let hist = {}
 
@@ -95,11 +140,20 @@ const getAverages = (rawData, property) => {
   })
 }
 
+
+const label = document.getElementById('label')
 const ageButton = document.getElementById('age').addEventListener('click', () => {
   handleData('age');
+  label.innerHTML = `🧗 Max Climbing Grade by Age`
 });
-const yearsButton = document.getElementById('years').addEventListener('click', () => handleData('years_cl'));
-const countryButton = document.getElementById('country').addEventListener('click', () => handleData('country'));
+const yearsButton = document.getElementById('years').addEventListener('click', () => {
+  handleData('years_cl')
+  label.innerHTML = `🧗 Max Climbing Grade by Years Climbing`
+});
+const countryButton = document.getElementById('country').addEventListener('click', () => {
+  handleData('country')
+  label.innerHTML = `🧗 Max Climbing Grade by Country`
+});
 
 
 handleData('years_cl');
